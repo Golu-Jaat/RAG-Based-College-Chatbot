@@ -1,0 +1,31 @@
+{
+  "name": "rag-based-college-chatbot",
+  "version": "1.0.0",
+  "description": "Full-stack RAG-based college information chatbot with auth, document upload, processing, vector search, citations, and chat history.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "build:client": "vite build --config client/vite.config.js",
+    "start": "node server.js",
+    "dev": "npm run build:client && node server.js",
+    "check:mongo": "node server/src/scripts/checkMongo.js"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@xyflow/react": "^12.11.5",
+    "mongodb": "^6.19.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2"
+  },
+  "keywords": [
+    "rag",
+    "chatbot",
+    "college",
+    "vector-search"
+  ],
+  "author": "",
+  "license": "MIT"
+}

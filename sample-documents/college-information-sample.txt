@@ -1,0 +1,15 @@
+College Information Sample
+
+Admissions: The admission form submission deadline for first-year BTech applicants is 15 July 2026.
+Departments: The college has Computer Science, Electronics, Mechanical, Civil, and Electrical Engineering departments.
+Courses: The BTech program includes core engineering courses, electives, laboratory courses, seminars, and final-year projects.
+Fees: The application fee for general category applicants is 1200 rupees and reserved category applicants is 600 rupees.
+Exams: Mid-semester exams begin on 10 September 2026 and end on 18 September 2026.
+Academic Calendar: The odd semester classes start on 1 August 2026.
+Hostel: Hostel registration opens on 20 July 2026 and closes on 28 July 2026.
+Library: The central library is open from 8 AM to 8 PM on working days.
+Clubs: Technical club registrations open in the first week of August.
+Placements: Placement training starts from 5 September 2026 for final-year students.
+Scholarships: Merit scholarship applications close on 30 August 2026.
+Policies: Students must maintain at least 75 percent attendance to appear in semester examinations.
+Events: The annual cultural fest is scheduled for 12 December 2026.
