@@ -1,149 +1,157 @@
 # RAG-Based College Chatbot
 
-A full-stack project built from `spec.md`. It provides authentication, role-based admin access, document upload and processing, chunking, embedding generation, MongoDB-backed vector similarity search, grounded answer generation, source references, and chat history.
+## 1. Project Name
 
-## Features
+RAG-Based College Chatbot
 
-- Student registration and login.
-- Seeded demo admin and student accounts.
-- Admin-only document upload, delete, and reprocess actions.
-- PDF, TXT, Markdown, CSV, JSON, and HTML ingestion.
-- Text cleaning, chunking, embedding generation, and local vector search.
-- RAG chatbot that answers from retrieved chunks and cites sources.
-- Unknown-question fallback when similarity is too low.
-- Per-user chat sessions and history.
-- MongoDB collections for users, documents, chunks, chat sessions, and messages.
-- Optional OpenAI answer generation when `OPENAI_API_KEY` is configured.
+## 2. Problem Statement
 
-See `PROJECT_REQUIREMENTS.md` for the submission requirements checklist.
-See `BONUS_FEATURES.md` for the bonus features checklist.
+Students often need quick, reliable answers about admissions, departments, courses, fees, exams, hostel facilities, scholarships, placements, policies, and events. College information is usually scattered across PDFs, notices, FAQs, and web pages, which makes it hard to find the correct answer quickly.
 
-## Folder Structure
+This project solves that problem with an AI-powered college information assistant. It uses Retrieval-Augmented Generation (RAG), so answers are generated from uploaded college documents instead of relying only on a general chatbot model.
 
-```text
-client/
-└── src/
-    ├── main.jsx
-    └── style.css
-└── index.html
-└── vite.config.js
+## 3. Features
 
-server/
-└── src/
-    ├── app.js
-    ├── config/
-    │   ├── db.js
-    │   └── env.js
-    ├── middleware/
-    │   ├── guards.js
-    │   └── rateLimit.js
-    ├── routes/
-    │   ├── adminRoutes.js
-    │   ├── authRoutes.js
-    │   ├── chatRoutes.js
-    │   └── documentRoutes.js
-    ├── services/
-    │   ├── authService.js
-    │   ├── documentService.js
-    │   └── ragService.js
-    └── utils/
-        └── http.js
-```
+- Student and admin authentication.
+- Protected routes and role-based admin access.
+- College document upload for PDFs, text, Markdown, CSV, JSON, and HTML.
+- Document text extraction, cleaning, chunking, and processing.
+- Embedding generation for uploaded document chunks.
+- MongoDB-backed vector-style semantic search.
+- RAG pipeline: user question -> embedding -> retrieval -> context -> answer.
+- AI-generated answers based on retrieved college knowledge-base content.
+- Source/reference display with relevance scores.
+- Unknown-question handling when relevant context is unavailable.
+- Chat history and conversation export.
+- Admin document management with upload, update, delete, and reprocess support.
+- Admin analytics and answer feedback.
+- Suggested questions and generated FAQs.
+- Multiple collections and department-wise knowledge-base filtering.
+- Document version metadata and automatic document summaries.
+- OCR status tracking for uploaded documents.
+- Hybrid keyword and semantic retrieval logic.
+- Streaming chat API endpoint.
+- Responsive React UI with Tailwind CSS.
+- Dark and light themes.
+- React Flow workflow graph with animated edges, drag-from-palette node creation, and node configuration panel.
+- Live execution timeline with planner, execution, validation, recovery, and monitoring agent badges.
+- Notifications drawer in the AppShell.
 
-## Run Locally
+## 4. Technology Stack
 
-Start MongoDB first. You can use a local MongoDB service, MongoDB Atlas, or Docker:
+- Frontend: React, Vite, Tailwind CSS, React Flow.
+- Backend: Node.js, native HTTP server, serverless-compatible Vercel API handler.
+- Database: MongoDB Atlas.
+- Authentication: JWT-style signed tokens with password hashing.
+- Document Processing: Node.js file processing and optional Python PDF extraction.
+- AI/RAG: Local embedding and retrieval pipeline with optional OpenAI answer generation.
+- Deployment: Vercel.
+- Version Control: Git and GitHub.
 
-```bash
-docker compose up -d
-```
+## 5. Screenshots
 
-```bash
-npm install
-npm run check:mongo
-npm run dev
-```
+### Workflow Console
 
-Open `http://localhost:3000`.
+![Workflow Console](docs/screenshots/workflow-console.png)
 
-For production-style local serving:
+### Chat Section
 
-```bash
-npm run build:client
-npm start
-```
+![Chat Section](docs/screenshots/chat-section.png)
 
-Demo accounts:
+### Light Theme Chat
 
-- Admin: `admin@college.edu` / `Admin@12345`
-- Student: `student@college.edu` / `Student@12345`
+![Light Theme Chat](docs/screenshots/light-theme-chat.png)
 
-The app creates MongoDB collections and `storage/` on first run. If an old `data/db.json` exists, it is migrated into MongoDB automatically when the MongoDB database is empty.
+## 6. Live Demo
 
-## Environment
+[https://rag-based-college-chatbot-one.vercel.app](https://rag-based-college-chatbot-one.vercel.app)
 
-Copy `.env.example` to `.env` before adding your MongoDB Atlas URI or custom settings.
+## 7. Backend
 
-```bash
-PORT=3000
-JWT_SECRET=replace-with-a-long-random-secret
-MONGODB_URI=mongodb://127.0.0.1:27017
-MONGODB_DB=college_rag_chatbot
-ADMIN_NAME=College Admin
-ADMIN_EMAIL=admin@college.edu
-ADMIN_PASSWORD=Admin@12345
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
-PYTHON_BIN=
-```
+The backend is deployed with the same Vercel application as serverless API routes.
 
-`OPENAI_API_KEY` is optional. Without it, the app still performs retrieval and returns a concise grounded answer from the highest-scoring source chunks.
+API base URL:
 
-`PYTHON_BIN` is optional. It can point to a Python installation with `pypdf` for PDF text extraction. In this Codex workspace, the bundled Python runtime includes `pypdf`.
+[https://rag-based-college-chatbot-one.vercel.app/api](https://rag-based-college-chatbot-one.vercel.app/api)
 
-## RAG Pipeline
-
-```text
-Admin Upload
-  -> Text Extraction
-  -> Text Cleaning
-  -> Chunking
-  -> Embedding Generation
-  -> MongoDB Chunk + Vector Storage
-
-User Question
-  -> Question Embedding
-  -> Vector Database Search
-  -> Relevant Context
-  -> LLM or Local Grounded Answerer
-  -> Answer + Source References
-  -> Chat History Save
-```
-
-## API Surface
-
-Authentication:
+Example API routes:
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
-- `POST /api/auth/logout`
-
-Documents:
-
 - `POST /api/documents/upload`
 - `GET /api/documents`
-- `GET /api/documents/:id`
-- `DELETE /api/documents/:id`
-- `POST /api/documents/:id/process`
-
-Chat:
-
 - `POST /api/chat/ask`
+- `POST /api/chat/stream`
 - `GET /api/chat/sessions`
-- `GET /api/chat/sessions/:id`
-- `DELETE /api/chat/sessions/:id`
+- `GET /api/admin/analytics`
 
-## Production Notes
+## 8. Setup Instructions
 
-For production deployment, use MongoDB Atlas, move files to cloud storage, set a strong `JWT_SECRET`, configure HTTPS, and consider MongoDB Atlas Vector Search or a managed vector database for larger document collections.
+Clone the repository:
+
+```bash
+git clone https://github.com/Golu-Jaat/RAG-Based-College-Chatbot.git
+cd RAG-Based-College-Chatbot
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env
+```
+
+Update `.env` with your own MongoDB Atlas URI, JWT secret, admin credentials, and optional OpenAI API key.
+
+Check MongoDB connection:
+
+```bash
+npm run check:mongo
+```
+
+Run locally:
+
+```bash
+npm run dev
+```
+
+Open the app:
+
+```text
+http://localhost:3000
+```
+
+Build the frontend manually:
+
+```bash
+npm run build:client
+```
+
+Start the production-style local server:
+
+```bash
+npm start
+```
+
+## 9. Environment Variables
+
+Required or supported environment variable names:
+
+- `PORT`
+- `JWT_SECRET`
+- `MONGODB_URI`
+- `MONGODB_DB`
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `PYTHON_BIN`
+
+Do not commit real API keys, passwords, OAuth secrets, access tokens, MongoDB credentials, or other sensitive values to GitHub. Keep actual values only in local `.env` files or deployment environment settings.
