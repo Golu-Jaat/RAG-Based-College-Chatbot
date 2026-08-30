@@ -33,13 +33,15 @@ export const env = {
   pythonBin:
     process.env.PYTHON_BIN ||
     process.env.PYTHON ||
-    "C:\\Users\\goluj\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    (process.platform === "win32"
+      ? "C:\\Users\\goluj\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe"
+      : "python3"),
   adminName: process.env.ADMIN_NAME || "College Admin",
   adminEmail: (process.env.ADMIN_EMAIL || "admin@college.edu").toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || "Admin@12345",
   rootDir: ROOT_DIR,
   clientDir: path.join(ROOT_DIR, "client", "dist"),
-  storageDir: path.join(ROOT_DIR, "storage"),
+  storageDir: process.env.VERCEL ? path.join("/tmp", "rag-college-chatbot-storage") : path.join(ROOT_DIR, "storage"),
   legacyDbPath: path.join(ROOT_DIR, "data", "db.json"),
   pdfExtractorScript: path.join(ROOT_DIR, "scripts", "extract_pdf.py")
 };

@@ -3,6 +3,7 @@ node_modules/
 data/
 storage/
 client/dist/
+.vercel/
 desktop.ini
 .DS_Store
 Thumbs.db

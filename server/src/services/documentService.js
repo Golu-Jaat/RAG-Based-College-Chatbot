@@ -44,6 +44,9 @@ async function extractPdf(filePath) {
     child.stderr.on("data", (data) => {
       err += data.toString();
     });
+    child.on("error", (error) => {
+      resolve([{ pageNumber: 1, text: `PDF extraction failed: ${error.message}`, ocrStatus: "failed" }]);
+    });
     child.on("close", () => {
       try {
         const payload = JSON.parse(out || "{}");

@@ -8,6 +8,8 @@ import { handleChatRoutes } from "./routes/chatRoutes.js";
 import { handleAdminRoutes } from "./routes/adminRoutes.js";
 import { jsonResponse, serveStatic } from "./utils/http.js";
 
+let initializePromise;
+
 async function seedDatabase() {
   await ensureStorage();
   const database = await getMongoDb();
@@ -74,6 +76,11 @@ async function seedDatabase() {
   );
 }
 
+export function initializeApp() {
+  initializePromise ||= seedDatabase();
+  return initializePromise;
+}
+
 export async function routeRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -100,7 +107,7 @@ export async function routeRequest(req, res) {
 export async function startServer() {
   try {
     console.log(`Connecting to MongoDB: ${mongoHostLabel()}`);
-    await seedDatabase();
+    await initializeApp();
     createServer(routeRequest).listen(env.port, () => {
       console.log(`RAG-Based College Chatbot running at http://localhost:${env.port}`);
       console.log("MongoDB database:", env.mongodbDb);
