@@ -138,6 +138,10 @@ function App() {
     boot();
   }, [refresh]);
 
+  useEffect(() => {
+    if (user?.role !== "admin" && view === "admin") setView("chat");
+  }, [user, view]);
+
   if (loading) return <FullScreenSkeleton theme={theme} />;
   if (!user) return <AuthScreen setUser={setUser} refresh={refresh} notify={notify} theme={theme} setTheme={setTheme} />;
 
@@ -158,7 +162,7 @@ function App() {
             notify={notify}
           />
         )}
-        {view === "admin" && <AdminView documents={documents} analytics={analytics} refresh={refresh} notify={notify} />}
+        {view === "admin" && user.role === "admin" && <AdminView documents={documents} analytics={analytics} refresh={refresh} notify={notify} />}
         {view === "history" && <HistoryView sessions={sessions} setView={setView} setMessages={setMessages} setActiveSession={setActiveSession} notify={notify} />}
         {view === "profile" && <ProfileView user={user} documents={documents} sessions={sessions} analytics={analytics} theme={theme} setTheme={setTheme} setUser={setUser} />}
       </AppShell>
@@ -238,7 +242,7 @@ function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
 }
 
 function AppShell({ user, view, setView, setUser, children, drawerOpen, setDrawerOpen, notifications, theme, setTheme }) {
-  const nav = ["console", "chat", "admin", "history", "profile"];
+  const nav = ["console", "chat", "admin", "history", "profile"].filter((item) => item !== "admin" || user.role === "admin");
   const meta = viewMeta[view] || viewMeta.console;
   return (
     <div className="grid min-h-screen lg:grid-cols-[288px_1fr]">
