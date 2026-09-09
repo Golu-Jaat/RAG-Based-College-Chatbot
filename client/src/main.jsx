@@ -24,6 +24,14 @@ const agentColors = {
   monitoring: "bg-violet-500/15 text-violet-200 ring-violet-400/40"
 };
 
+const viewMeta = {
+  console: { label: "Console", description: "Monitor the RAG workflow, retrieval agents, and knowledge-base health." },
+  chat: { label: "Chat", description: "Ask grounded college questions with source-backed answers." },
+  admin: { label: "Admin", description: "Upload, process, and review college knowledge-base documents." },
+  history: { label: "History", description: "Open and export previous student conversations." },
+  profile: { label: "Profile", description: "Manage account context, role, and interface preferences." }
+};
+
 function getInitialTheme() {
   const saved = localStorage.getItem(themeKey);
   if (saved === "light" || saved === "dark") return saved;
@@ -209,17 +217,25 @@ function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
 
 function AppShell({ user, view, setView, setUser, children, drawerOpen, setDrawerOpen, notifications, theme, setTheme }) {
   const nav = ["console", "chat", "admin", "history", "profile"];
+  const meta = viewMeta[view] || viewMeta.console;
   return (
-    <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
-      <aside className="border-r border-slate-800 bg-slate-950/90 p-5">
+    <div className="grid min-h-screen lg:grid-cols-[288px_1fr]">
+      <aside className="border-r border-slate-800 bg-slate-950/90 p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
         <div className="rounded border border-cyan-400/30 bg-cyan-400/10 p-4">
-          <div className="text-lg font-bold text-white">College RAG</div>
-          <div className="text-xs text-cyan-200">Operator Console</div>
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded bg-cyan-400 font-bold text-slate-950">R</div>
+            <div>
+              <div className="text-lg font-bold text-white">College RAG</div>
+              <div className="text-xs text-cyan-200">Operator Console</div>
+            </div>
+          </div>
+          <div className="mt-4 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 text-xs text-slate-400">MongoDB retrieval pipeline active</div>
         </div>
         <nav className="mt-6 grid gap-2">
           {nav.map((item) => (
-            <button key={item} onClick={() => setView(item)} className={`rounded px-4 py-3 text-left capitalize ${view === item ? "bg-slate-800 text-cyan-200" : "text-slate-400 hover:bg-slate-900"}`}>
-              {item}
+            <button key={item} onClick={() => setView(item)} className={`rounded border px-4 py-3 text-left transition ${view === item ? "border-cyan-400/50 bg-slate-800 text-cyan-200" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-900"}`}>
+              <span className="block font-medium capitalize">{viewMeta[item].label}</span>
+              <span className="mt-1 block text-xs normal-case text-slate-500">{viewMeta[item].description}</span>
             </button>
           ))}
         </nav>
@@ -231,19 +247,20 @@ function AppShell({ user, view, setView, setUser, children, drawerOpen, setDrawe
         <button onClick={() => { localStorage.removeItem(tokenKey); setUser(null); }} className="mt-4 h-11 w-full rounded border border-slate-700 text-slate-300">Sign out</button>
       </aside>
       <main className="min-w-0">
-        <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-5 py-4">
-          <div>
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/80 px-5 py-4">
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest text-cyan-300">Live System</div>
-            <h2 className="text-xl font-semibold capitalize text-white">{view}</h2>
+            <h2 className="text-2xl font-semibold text-white">{meta.label}</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-400">{meta.description}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <ThemeToggle theme={theme} setTheme={setTheme} />
             <button onClick={() => setDrawerOpen(true)} className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-200">
               Notifications <span className="ml-2 rounded bg-cyan-400 px-2 text-slate-950">{notifications.length}</span>
             </button>
           </div>
         </header>
-        <div className="p-4">{children}</div>
+        <div className="mx-auto max-w-[1680px] p-4">{children}</div>
       </main>
       <NotificationsDrawer open={drawerOpen} setOpen={setDrawerOpen} notifications={notifications} />
     </div>
@@ -302,6 +319,7 @@ function ConsoleView({ documents, analytics, notify }) {
 
   return (
     <div className="space-y-4">
+      <SystemStatusBar documents={documents} analytics={analytics} />
       <MetricGrid documents={documents} analytics={analytics} />
       <ReactFlowProvider>
         <div className="grid gap-4 xl:grid-cols-[210px_minmax(0,1fr)_280px]">
@@ -315,14 +333,47 @@ function ConsoleView({ documents, analytics, notify }) {
   );
 }
 
+function SystemStatusBar({ documents, analytics }) {
+  const chunks = analytics?.totals?.chunks || documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0);
+  return (
+    <section className="grid gap-3 rounded border border-slate-800 bg-slate-900 p-4 md:grid-cols-3">
+      <div>
+        <div className="text-xs uppercase tracking-widest text-cyan-300">System Health</div>
+        <div className="mt-1 text-lg font-semibold text-white">Ready for student questions</div>
+      </div>
+      <div className="rounded border border-slate-800 bg-slate-950 p-3">
+        <div className="text-xs text-slate-500">Indexed content</div>
+        <div className="mt-1 font-semibold text-white">{documents.length} documents / {chunks} chunks</div>
+      </div>
+      <div className="rounded border border-slate-800 bg-slate-950 p-3">
+        <div className="text-xs text-slate-500">Retrieval mode</div>
+        <div className="mt-1 font-semibold text-white">Hybrid semantic search</div>
+      </div>
+    </section>
+  );
+}
+
 function MetricGrid({ documents, analytics }) {
   const metrics = [
-    ["Documents", documents.length],
-    ["Chunks", analytics?.totals?.chunks || documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0)],
-    ["Questions", analytics?.totals?.chatMessages || 0],
-    ["Unanswered", analytics?.totals?.unanswered || 0]
+    ["Documents", documents.length, "Uploaded knowledge files"],
+    ["Chunks", analytics?.totals?.chunks || documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0), "Searchable context units"],
+    ["Questions", analytics?.totals?.chatMessages || 0, "Student prompts answered"],
+    ["Unanswered", analytics?.totals?.unanswered || 0, "Needs more documents"]
   ];
-  return <div className="grid gap-3 md:grid-cols-4">{metrics.map(([label, value]) => <div key={label} className="rounded border border-slate-800 bg-slate-900 p-4"><div className="text-sm text-slate-400">{label}</div><div className="mt-2 text-3xl font-bold text-white">{value}</div></div>)}</div>;
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {metrics.map(([label, value, helper]) => (
+        <div key={label} className="rounded border border-slate-800 bg-slate-900 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm text-slate-400">{label}</div>
+            <span className="h-2 w-2 rounded-full bg-cyan-400" />
+          </div>
+          <div className="mt-2 text-3xl font-bold text-white">{value}</div>
+          <div className="mt-1 text-xs text-slate-500">{helper}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function NodePalette() {
@@ -359,7 +410,7 @@ function WorkflowCanvas({ setSelectedNode, notify }) {
   }, [screenToFlowPosition, setNodes, notify]);
 
   return (
-    <section className="relative h-[560px] overflow-hidden rounded border border-slate-800 bg-slate-950">
+    <section className="relative h-[560px] overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-slate-950/20">
       <div className="pointer-events-none absolute left-4 top-4 z-10 rounded border border-slate-800 bg-slate-900/95 px-3 py-2 text-xs text-slate-400">
         Drag nodes from palette, connect steps, click any node to configure.
       </div>
@@ -480,19 +531,33 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
     }
   }
 
+  function startNewChat() {
+    setMessages([]);
+    setActiveSession(null);
+    setDraftQuestion("");
+    notify("New chat ready", "Conversation context cleared.", "success");
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-      <section className="rounded border border-slate-800 bg-slate-900">
+      <section className="overflow-hidden rounded border border-slate-800 bg-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 p-3">
+          <div>
+            <h3 className="font-semibold text-white">{activeSession?.title || "New college query"}</h3>
+            <p className="mt-1 text-sm text-slate-400">Answers stay grounded in uploaded documents and source chunks.</p>
+          </div>
+          <button type="button" onClick={startNewChat} className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-cyan-300 hover:text-cyan-100">New chat</button>
+        </div>
         <div className="grid gap-3 border-b border-slate-800 p-3 md:grid-cols-4">
           <Select label="Collection" value={filters.collection} values={options.collections} onChange={(value) => setFilters((item) => ({ ...item, collection: value }))} />
           <Select label="Department" value={filters.department} values={options.departments} onChange={(value) => setFilters((item) => ({ ...item, department: value }))} />
           <Select label="Category" value={filters.category} values={options.categories} onChange={(value) => setFilters((item) => ({ ...item, category: value }))} />
           <Select label="Language" value={filters.language} values={["en", "hi", "auto"]} onChange={(value) => setFilters((item) => ({ ...item, language: value }))} />
         </div>
-        <div className="max-h-[560px] min-h-[460px] space-y-4 overflow-auto p-4">
+        <div className="max-h-[560px] min-h-[460px] space-y-4 overflow-auto bg-slate-950/40 p-4">
           {messages.length ? messages.map((message, index) => <Message key={message.id || index} message={message} notify={notify} setMessages={setMessages} />) : <EmptyChatState documents={documents} setDraftQuestion={setDraftQuestion} />}
         </div>
-        <form onSubmit={submit} className="grid grid-cols-[1fr_56px] gap-3 border-t border-slate-800 p-3">
+        <form onSubmit={submit} className="grid gap-3 border-t border-slate-800 p-3 sm:grid-cols-[1fr_96px]">
           <textarea
             name="question"
             value={draftQuestion}
@@ -500,7 +565,7 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
             className="min-h-16 rounded border border-slate-700 bg-slate-950 p-3 text-slate-100 outline-none focus:border-cyan-300"
             placeholder="Ask a college-related question..."
           />
-          <button disabled={busy} className="h-16 rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse">↗</button>
+          <button disabled={busy} className="h-16 rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse disabled:opacity-70">{busy ? "Search" : "Ask"}</button>
         </form>
       </section>
       <aside className="space-y-4">
@@ -555,11 +620,27 @@ function Message({ message, notify, setMessages }) {
 
   return (
     <div className="space-y-3">
-      <div className="ml-auto max-w-3xl rounded bg-cyan-500 px-4 py-3 font-medium text-slate-950">{message.question}</div>
-      <div className="max-w-4xl rounded border border-slate-800 bg-slate-950 p-4">
+      <div className="ml-auto max-w-3xl rounded bg-cyan-500 px-4 py-3 font-medium text-slate-950 shadow-lg shadow-cyan-950/10">{message.question}</div>
+      <div className="max-w-4xl rounded border border-slate-800 bg-slate-950 p-4 shadow-sm">
         <p className="whitespace-pre-wrap text-slate-200">{message.answer}</p>
-        {message.sources?.length ? <div className="mt-3 grid gap-2">{message.sources.map((source, i) => <div key={i} className="rounded border border-slate-800 bg-slate-900 p-3 text-sm"><strong>{source.documentTitle}</strong><div className="text-cyan-200">Page {source.pageNumber || "N/A"} | relevance {source.similarityScore}</div><p className="mt-1 text-slate-400">{source.snippet}</p></div>)}</div> : null}
-        {message.id && <div className="mt-3 flex gap-2"><button onClick={() => feedback("up")} className="h-10 w-10 rounded border border-slate-700">↑</button><button onClick={() => feedback("down")} className="h-10 w-10 rounded border border-slate-700">↓</button><button onClick={() => speak(message.answer)} className="h-10 rounded border border-slate-700 px-3">Speak</button></div>}
+        {message.sources?.length ? (
+          <div className="mt-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-slate-500">Sources</div>
+            <div className="grid gap-2">
+              {message.sources.map((source, i) => (
+                <div key={i} className="rounded border border-slate-800 bg-slate-900 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-white">{source.documentTitle}</strong>
+                    <span className="rounded bg-cyan-400/10 px-2 py-1 text-xs text-cyan-200">relevance {source.similarityScore}</span>
+                  </div>
+                  <div className="mt-1 text-cyan-200">Page {source.pageNumber || "N/A"}</div>
+                  <p className="mt-1 text-slate-400">{source.snippet}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {message.id && <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => feedback("up")} className="h-10 rounded border border-slate-700 px-3">Helpful</button><button onClick={() => feedback("down")} className="h-10 rounded border border-slate-700 px-3">Review</button><button onClick={() => speak(message.answer)} className="h-10 rounded border border-slate-700 px-3">Speak</button></div>}
       </div>
     </div>
   );
@@ -587,6 +668,7 @@ function AdminView({ documents, analytics, refresh, notify }) {
     <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
       <form onSubmit={upload} className="space-y-3 rounded border border-slate-800 bg-slate-900 p-4">
         <h3 className="font-semibold text-white">Upload Document</h3>
+        <p className="text-sm text-slate-400">Add official college notices, PDFs, FAQs, and policies to expand answer coverage.</p>
         <Input name="title" label="Title" required />
         <Input name="collection" label="Collection" />
         <Input name="category" label="Category" />
@@ -596,7 +678,7 @@ function AdminView({ documents, analytics, refresh, notify }) {
       </form>
       <div className="space-y-4">
         <MetricGrid documents={documents} analytics={analytics} />
-        <div className="grid gap-3">{documents.map((doc) => <DocumentCard key={doc.id} doc={doc} rich />)}</div>
+        <div className="grid gap-3">{documents.length ? documents.map((doc) => <DocumentCard key={doc.id} doc={doc} rich />) : <EmptyPanel title="No documents yet" body="Upload the first college document to create searchable chunks and source-backed answers." />}</div>
       </div>
     </div>
   );
@@ -616,7 +698,7 @@ function HistoryView({ sessions, setView, setMessages, setActiveSession, notify 
   }
   return (
     <div className="grid gap-3">
-      {sessions.map((session) => (
+      {sessions.length ? sessions.map((session) => (
         <div key={session.id} className="flex items-center justify-between rounded border border-slate-800 bg-slate-900 p-4">
           <div>
             <strong>{session.title}</strong>
@@ -627,7 +709,7 @@ function HistoryView({ sessions, setView, setMessages, setActiveSession, notify 
             <button onClick={() => exportSession(session.id)} className="rounded border border-slate-700 px-3 py-2">Export</button>
           </div>
         </div>
-      ))}
+      )) : <EmptyPanel title="No chat history yet" body="Ask a question in Chat to create a conversation that can be reopened or exported here." />}
     </div>
   );
 }
@@ -716,6 +798,16 @@ function ProfileField({ label, value }) {
     <div className="rounded border border-slate-800 bg-slate-950 p-3">
       <div className="text-xs uppercase tracking-widest text-slate-500">{label}</div>
       <div className="mt-1 font-medium capitalize text-white">{value}</div>
+    </div>
+  );
+}
+
+function EmptyPanel({ title, body }) {
+  return (
+    <div className="rounded border border-slate-800 bg-slate-900 p-6 text-center">
+      <div className="mx-auto h-1 w-16 rounded bg-cyan-400" />
+      <h3 className="mt-4 font-semibold text-white">{title}</h3>
+      <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">{body}</p>
     </div>
   );
 }

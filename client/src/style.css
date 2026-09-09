@@ -23,7 +23,8 @@ html[data-theme="light"] body {
 .theme-light .bg-slate-950,
 .theme-light [class~="bg-slate-950/90"],
 .theme-light [class~="bg-slate-950/80"],
-.theme-light [class~="bg-slate-950/70"] {
+.theme-light [class~="bg-slate-950/70"],
+.theme-light [class~="bg-slate-950/40"] {
   background-color: #f8fafc !important;
 }
 
@@ -34,6 +35,14 @@ html[data-theme="light"] body {
 
 .theme-light .bg-slate-800 {
   background-color: #e2e8f0 !important;
+}
+
+.theme-light .hover\:bg-slate-900:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light .shadow-slate-950\/20 {
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .08) !important;
 }
 
 .theme-light .border-slate-800,
