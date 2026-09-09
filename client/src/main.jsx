@@ -168,7 +168,17 @@ function App() {
 
 function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
   const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("jaatgolu285@gmail.com");
+  const [password, setPassword] = useState("Admin@12345");
   const [busy, setBusy] = useState(false);
+
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    if (nextMode === "register") {
+      setEmail("");
+      setPassword("");
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -176,12 +186,19 @@ function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
     try {
       const body = Object.fromEntries(new FormData(event.currentTarget));
       const payload = await api(mode === "login" ? "/api/auth/login" : "/api/auth/register", { method: "POST", body: JSON.stringify(body) });
+      if (mode === "register") {
+        setEmail(body.email || "");
+        setPassword("");
+        setMode("login");
+        notify("Account created", "Now log in with your new email and password.", "success");
+        return;
+      }
       localStorage.setItem(tokenKey, payload.token);
       setUser(payload.user);
       await refresh();
       notify("Signed in", "Operator console is ready.", "success");
     } catch (error) {
-      notify("Authentication failed", error.message, "error");
+      notify(mode === "register" ? "Registration failed" : "Authentication failed", error.message, "error");
     } finally {
       setBusy(false);
     }
@@ -200,12 +217,17 @@ function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
         </section>
         <form onSubmit={submit} className="space-y-4 border-l border-slate-800 bg-slate-950/70 p-7">
           <div className="grid grid-cols-2 rounded border border-slate-800 p-1">
-            <button type="button" className={`rounded px-3 py-2 ${mode === "login" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => setMode("login")}>Login</button>
-            <button type="button" className={`rounded px-3 py-2 ${mode === "register" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => setMode("register")}>Register</button>
+            <button type="button" className={`rounded px-3 py-2 ${mode === "login" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => switchMode("login")}>Login</button>
+            <button type="button" className={`rounded px-3 py-2 ${mode === "register" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => switchMode("register")}>Register</button>
           </div>
           {mode === "register" && <Input name="name" label="Name" required />}
-          <Input name="email" type="email" label="Email" defaultValue="jaatgolu285@gmail.com" required />
-          <Input name="password" type="password" label="Password" defaultValue="Admin@12345" required />
+          <Input name="email" type="email" label="Email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <Input name="password" type="password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          {mode === "login" ? (
+            <p className="text-xs text-slate-500">New account banane ke baad yahin se login karein.</p>
+          ) : (
+            <p className="text-xs text-slate-500">Register ke baad aapko login tab par bhej diya jayega.</p>
+          )}
           <button disabled={busy} className="h-11 w-full rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse disabled:opacity-60">
             {busy ? "Working..." : mode === "login" ? "Login" : "Create account"}
           </button>
