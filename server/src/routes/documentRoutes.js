@@ -1,7 +1,5 @@
 import path from "node:path";
-import { writeFile } from "node:fs/promises";
-import { env } from "../config/env.js";
-import { readDb, writeDb } from "../config/db.js";
+import { readDb, saveFileToGridFs, writeDb } from "../config/db.js";
 import { deleteDocumentFile, processDocument, sanitizeFilename, uploadLimitBytes, validateUpload } from "../services/documentService.js";
 import { id, nowIso } from "../services/authService.js";
 import { requireAdmin, requireAuth } from "../middleware/guards.js";
@@ -41,8 +39,7 @@ export async function handleDocumentRoutes(req, res, route, user) {
     const file = files.file;
     validateUpload(file);
     const filename = sanitizeFilename(file.filename);
-    const storedPath = path.join(env.storageDir, filename);
-    await writeFile(storedPath, file.buffer);
+    const fileId = await saveFileToGridFs({ ...file, filename });
     const db = await readDb();
     const collection = fields.collection || "General Knowledge Base";
     const department = fields.department || "All";
@@ -59,7 +56,8 @@ export async function handleDocumentRoutes(req, res, route, user) {
       category: fields.category || "General",
       department,
       version,
-      fileUrl: path.relative(env.rootDir, storedPath).replace(/\\/g, "/"),
+      fileId,
+      fileUrl: `gridfs://${fileId}/${filename}`,
       originalFilename: file.filename,
       fileType: file.mime,
       uploadedBy: user.id,

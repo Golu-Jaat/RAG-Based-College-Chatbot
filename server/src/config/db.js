@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
-import { MongoClient } from "mongodb";
+import { GridFSBucket, MongoClient, ObjectId } from "mongodb";
 import { env, redactMongoUri } from "./env.js";
 
 export const collectionNames = ["users", "documents", "chunks", "chatSessions", "chatMessages"];
@@ -26,6 +26,43 @@ export async function getMongoDb() {
   mongoDatabase = mongoClient.db(env.mongodbDb);
   await ensureIndexes();
   return mongoDatabase;
+}
+
+export async function saveFileToGridFs(file) {
+  const database = await getMongoDb();
+  const bucket = new GridFSBucket(database, { bucketName: "uploads" });
+  return new Promise((resolve, reject) => {
+    const upload = bucket.openUploadStream(file.filename, {
+      contentType: file.mime,
+      metadata: { uploadedAt: new Date().toISOString() }
+    });
+    upload.on("error", reject);
+    upload.on("finish", () => resolve(upload.id.toString()));
+    upload.end(file.buffer);
+  });
+}
+
+export async function readFileFromGridFs(fileId) {
+  const database = await getMongoDb();
+  const bucket = new GridFSBucket(database, { bucketName: "uploads" });
+  const chunks = [];
+  return new Promise((resolve, reject) => {
+    const stream = bucket.openDownloadStream(new ObjectId(fileId));
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+  });
+}
+
+export async function deleteFileFromGridFs(fileId) {
+  if (!fileId) return;
+  try {
+    const database = await getMongoDb();
+    const bucket = new GridFSBucket(database, { bucketName: "uploads" });
+    await bucket.delete(new ObjectId(fileId));
+  } catch {
+    // Metadata cleanup should still succeed if the stored file is already gone.
+  }
 }
 
 export async function ensureIndexes() {

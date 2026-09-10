@@ -44,7 +44,7 @@ export async function handleChatRoutes(req, res, route, user) {
     if (!existingSession) db.chatSessions.push(session);
 
     const filters = { collection, department, category };
-    const results = searchChunks(db, question, 5, filters);
+    const results = await searchChunks(db, question, 5, filters);
     const answer = await generateAnswer(question, results, { language });
     const message = {
       id: id("msg"),
@@ -85,7 +85,7 @@ export async function handleChatRoutes(req, res, route, user) {
       };
     if (!existingSession) db.chatSessions.push(session);
     const filters = { collection, department, category };
-    const results = searchChunks(db, question, 5, filters);
+    const results = await searchChunks(db, question, 5, filters);
     const answer = await generateAnswer(question, results, { language });
     const message = {
       id: id("msg"),

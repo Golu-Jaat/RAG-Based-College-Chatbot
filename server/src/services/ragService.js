@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { env } from "../config/env.js";
+import { getMongoDb } from "../config/db.js";
 
 export const VECTOR_SIZE = 384;
 export const MIN_SIMILARITY = 0.14;
@@ -131,7 +132,18 @@ function chunkWords(words, pageNumber, maxWords, overlapWords) {
   return chunks;
 }
 
-export function searchChunks(db, question, limit = 5, filters = {}) {
+export async function searchChunks(db, question, limit = 5, filters = {}) {
+  if (env.vectorSearchIndex) {
+    try {
+      return await searchChunksWithAtlasVectorSearch(db, question, limit, filters);
+    } catch {
+      // Atlas Vector Search is optional. Local hybrid ranking keeps the app usable if the index is not ready.
+    }
+  }
+  return searchChunksLocally(db, question, limit, filters);
+}
+
+function searchChunksLocally(db, question, limit = 5, filters = {}) {
   const queryEmbedding = embed(question);
   const queryTerms = new Set(tokenize(question));
   const allowedDocuments = db.documents.filter((document) => documentMatchesFilters(document, filters));
@@ -146,6 +158,56 @@ export function searchChunks(db, question, limit = 5, filters = {}) {
         documentTitle: document?.title || "Unknown document",
         lexicalOverlap,
         score: cosine(queryEmbedding, chunk.embedding)
+      };
+    })
+    .sort((a, b) => b.lexicalOverlap + b.score - (a.lexicalOverlap + a.score))
+    .slice(0, limit);
+}
+
+async function searchChunksWithAtlasVectorSearch(db, question, limit, filters) {
+  const queryEmbedding = embed(question);
+  const queryTerms = new Set(tokenize(question));
+  const allowedDocuments = db.documents.filter((document) => documentMatchesFilters(document, filters));
+  const allowedIds = allowedDocuments.map((document) => document.id);
+  if (!allowedIds.length) return [];
+  const documentsById = new Map(allowedDocuments.map((document) => [document.id, document]));
+  const database = await getMongoDb();
+  const pipeline = [
+    {
+      $vectorSearch: {
+        index: env.vectorSearchIndex,
+        path: "embedding",
+        queryVector: queryEmbedding,
+        numCandidates: Math.max(limit * 20, 80),
+        limit: Math.max(limit * 4, 16),
+        filter: { documentId: { $in: allowedIds } }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        id: 1,
+        documentId: 1,
+        chunkText: 1,
+        chunkIndex: 1,
+        pageNumber: 1,
+        embedding: 1,
+        metadata: 1,
+        createdAt: 1,
+        vectorScore: { $meta: "vectorSearchScore" }
+      }
+    }
+  ];
+  const chunks = await database.collection("chunks").aggregate(pipeline).toArray();
+  return chunks
+    .map((chunk) => {
+      const document = documentsById.get(chunk.documentId);
+      const lexicalOverlap = tokenize(chunk.chunkText).filter((term) => queryTerms.has(term)).length;
+      return {
+        ...chunk,
+        documentTitle: document?.title || "Unknown document",
+        lexicalOverlap,
+        score: Number(chunk.vectorScore || 0)
       };
     })
     .sort((a, b) => b.lexicalOverlap + b.score - (a.lexicalOverlap + a.score))

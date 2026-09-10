@@ -6,6 +6,7 @@ import { env } from "../config/env.js";
 export function jsonResponse(res, status, body) {
   const data = Buffer.from(JSON.stringify(body));
   res.writeHead(status, {
+    ...securityHeaders(),
     "content-type": "application/json; charset=utf-8",
     "content-length": data.length
   });
@@ -14,8 +15,16 @@ export function jsonResponse(res, status, body) {
 
 export function textResponse(res, status, text, contentType = "text/plain; charset=utf-8") {
   const data = Buffer.from(text);
-  res.writeHead(status, { "content-type": contentType, "content-length": data.length });
+  res.writeHead(status, { ...securityHeaders(), "content-type": contentType, "content-length": data.length });
   res.end(data);
+}
+
+export function securityHeaders() {
+  return {
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "same-origin",
+    "x-frame-options": "DENY"
+  };
 }
 
 export async function readBody(req, maxBytes = 1_000_000) {
@@ -36,7 +45,11 @@ export async function readBody(req, maxBytes = 1_000_000) {
 export async function readJson(req) {
   const body = await readBody(req);
   if (!body.length) return {};
-  return JSON.parse(body.toString("utf8"));
+  try {
+    return JSON.parse(body.toString("utf8"));
+  } catch {
+    throw Object.assign(new Error("Invalid JSON payload."), { status: 400 });
+  }
 }
 
 export function parseCookies(req) {
@@ -95,10 +108,10 @@ export async function serveStatic(req, res) {
         ".js": "application/javascript; charset=utf-8",
         ".svg": "image/svg+xml"
       }[ext] || "application/octet-stream";
-    res.writeHead(200, { "content-type": contentType });
+    res.writeHead(200, { ...securityHeaders(), "content-type": contentType });
     createReadStream(filePath).pipe(res);
   } catch {
+    res.writeHead(200, { ...securityHeaders(), "content-type": "text/html; charset=utf-8" });
     createReadStream(path.join(env.clientDir, "index.html")).pipe(res);
   }
 }
-

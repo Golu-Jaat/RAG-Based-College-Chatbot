@@ -86,6 +86,11 @@ export async function routeRequest(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const route = url.pathname;
 
+    if (route === "/api/health" && req.method === "GET") {
+      jsonResponse(res, 200, { ok: true, service: "rag-based-college-chatbot", database: env.mongodbDb });
+      return;
+    }
+
     if (route.startsWith("/api/auth/") && (await handleAuthRoutes(req, res, route))) return;
 
     if (route.startsWith("/api/")) {

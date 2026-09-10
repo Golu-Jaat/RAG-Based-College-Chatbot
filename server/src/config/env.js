@@ -30,6 +30,7 @@ export const env = {
   mongodbDb: process.env.MONGODB_DB || "college_rag_chatbot",
   openaiApiKey: process.env.OPENAI_API_KEY || "",
   openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  vectorSearchIndex: process.env.MONGODB_VECTOR_INDEX || "",
   pythonBin:
     process.env.PYTHON_BIN ||
     process.env.PYTHON ||

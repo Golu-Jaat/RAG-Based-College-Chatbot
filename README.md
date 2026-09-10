@@ -18,6 +18,8 @@ This project solves that problem with an AI-powered college information assistan
 - Document text extraction, cleaning, chunking, and processing.
 - Embedding generation for uploaded document chunks.
 - MongoDB-backed vector-style semantic search.
+- Optional MongoDB Atlas Vector Search through `MONGODB_VECTOR_INDEX`.
+- Persistent uploaded-file storage with MongoDB GridFS.
 - RAG pipeline: user question -> embedding -> retrieval -> context -> answer.
 - AI-generated answers based on retrieved college knowledge-base content.
 - Source/reference display with relevance scores.
@@ -41,7 +43,7 @@ This project solves that problem with an AI-powered college information assistan
 
 - Frontend: React, Vite, Tailwind CSS, React Flow.
 - Backend: Node.js, native HTTP server, serverless-compatible Vercel API handler.
-- Database: MongoDB Atlas.
+- Database: MongoDB Atlas and MongoDB GridFS.
 - Authentication: JWT-style signed tokens with password hashing.
 - Document Processing: Node.js file processing and optional Python PDF extraction.
 - AI/RAG: Local embedding and retrieval pipeline with optional OpenAI answer generation.
@@ -147,6 +149,7 @@ Required or supported environment variable names:
 - `JWT_SECRET`
 - `MONGODB_URI`
 - `MONGODB_DB`
+- `MONGODB_VECTOR_INDEX`
 - `ADMIN_NAME`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`

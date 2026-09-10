@@ -3,7 +3,7 @@ import { readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { env } from "../config/env.js";
-import { readDb, writeDb } from "../config/db.js";
+import { deleteFileFromGridFs, readDb, readFileFromGridFs, writeDb } from "../config/db.js";
 import { chunkText, embed, generateFaqsFromChunks, summarizeText } from "./ragService.js";
 import { id, nowIso } from "./authService.js";
 
@@ -76,7 +76,8 @@ export async function processDocument(documentId) {
   await writeDb(db);
 
   try {
-    const pages = await extractText(path.join(env.rootDir || path.resolve(env.storageDir, ".."), document.fileUrl), document.fileType);
+    const filePath = await materializeDocumentFile(document);
+    const pages = await extractText(filePath, document.fileType);
     const chunks = chunkText(pages);
     const filteredChunks = chunks.filter((chunk) => !chunk.text.startsWith("PDF extraction failed"));
     db.chunks = db.chunks.filter((chunk) => chunk.documentId !== documentId);
@@ -117,9 +118,25 @@ function getOcrStatus(pages, chunks) {
 }
 
 export async function deleteDocumentFile(document) {
+  await deleteFileFromGridFs(document.fileId);
   try {
-    await unlink(path.join(env.storageDir, path.basename(document.fileUrl)));
+    await unlink(resolveDocumentPath(document));
   } catch {
     // File may already be gone; metadata cleanup still succeeded.
   }
+}
+
+async function materializeDocumentFile(document) {
+  const filePath = resolveDocumentPath(document);
+  if (document.fileId) {
+    const buffer = await readFileFromGridFs(document.fileId);
+    await writeFile(filePath, buffer);
+    return filePath;
+  }
+  return filePath;
+}
+
+function resolveDocumentPath(document) {
+  const filename = path.basename(document.fileUrl || document.originalFilename || "document.txt");
+  return path.join(env.storageDir, filename);
 }

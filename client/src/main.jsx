@@ -537,20 +537,22 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
 
   async function submit(event) {
     event.preventDefault();
-    const form = event.currentTarget;
     const question = draftQuestion.trim();
     if (!question) return;
+    const pendingId = crypto.randomUUID();
     setBusy(true);
-    setMessages((items) => [...items, { question, answer: "Searching MongoDB vectors...", sources: [] }]);
+    setMessages((items) => [...items, { id: pendingId, question, answer: "", sources: [], pending: true }]);
+    setDraftQuestion("");
     try {
-      const payload = await api("/api/chat/ask", { method: "POST", body: JSON.stringify({ question, sessionId: activeSession?.id, ...filters }) });
+      const payload = await streamChatAnswer({ question, sessionId: activeSession?.id, ...filters }, (token) => {
+        setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, answer: `${item.answer}${token}` } : item));
+      });
       setActiveSession(payload.session);
-      setMessages((items) => [...items.slice(0, -1), payload.message]);
-      form.reset();
-      setDraftQuestion("");
+      setMessages((items) => items.map((item) => item.id === pendingId ? payload.message : item));
       await refresh();
       notify("Answer generated", `${payload.message.sources.length} source reference(s) attached.`, "success");
     } catch (error) {
+      setMessages((items) => items.map((item) => item.id === pendingId ? { ...item, pending: false, failed: true, answer: error.message || "Chat failed. Please try again." } : item));
       notify("Chat failed", error.message, "error");
     } finally {
       setBusy(false);
@@ -591,7 +593,7 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
             className="min-h-16 rounded border border-slate-700 bg-slate-950 p-3 text-slate-100 outline-none focus:border-cyan-300"
             placeholder="Ask a college-related question..."
           />
-          <button disabled={busy} className="h-16 rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse disabled:opacity-70">{busy ? "Search" : "Ask"}</button>
+          <button disabled={busy} className="h-16 rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse disabled:opacity-70">{busy ? "Thinking" : "Ask"}</button>
         </form>
       </section>
       <aside className="space-y-4">
@@ -606,6 +608,37 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
       </aside>
     </div>
   );
+}
+
+async function streamChatAnswer(body, onToken) {
+  const headers = { "content-type": "application/json" };
+  const token = localStorage.getItem(tokenKey);
+  if (token) headers.authorization = `Bearer ${token}`;
+  const response = await fetch("/api/chat/stream", { method: "POST", headers, body: JSON.stringify(body) });
+  if (!response.ok || !response.body) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error || "Chat request failed.");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let donePayload = null;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() || "";
+    for (const event of events) {
+      const line = event.split("\n").find((item) => item.startsWith("data: "));
+      if (!line) continue;
+      const payload = JSON.parse(line.slice(6));
+      if (payload.type === "token") onToken(payload.token);
+      if (payload.type === "done") donePayload = payload;
+    }
+  }
+  if (!donePayload) throw new Error("Chat stream ended before completion.");
+  return donePayload;
 }
 
 function EmptyChatState({ documents, setDraftQuestion }) {
@@ -649,6 +682,7 @@ function Message({ message, notify, setMessages }) {
       <div className="ml-auto max-w-3xl rounded bg-cyan-500 px-4 py-3 font-medium text-slate-950 shadow-lg shadow-cyan-950/10">{message.question}</div>
       <div className="max-w-4xl rounded border border-slate-800 bg-slate-950 p-4 shadow-sm">
         <p className="whitespace-pre-wrap text-slate-200">{message.answer}</p>
+        {message.pending && !message.answer && <div className="mt-1 text-sm text-slate-500">Searching indexed sources...</div>}
         {message.sources?.length ? (
           <div className="mt-4">
             <div className="mb-2 text-xs uppercase tracking-widest text-slate-500">Sources</div>
@@ -666,7 +700,7 @@ function Message({ message, notify, setMessages }) {
             </div>
           </div>
         ) : null}
-        {message.id && <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => feedback("up")} className="h-10 rounded border border-slate-700 px-3">Helpful</button><button onClick={() => feedback("down")} className="h-10 rounded border border-slate-700 px-3">Review</button><button onClick={() => speak(message.answer)} className="h-10 rounded border border-slate-700 px-3">Speak</button></div>}
+        {message.id && !message.pending && !message.failed && <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => feedback("up")} className="h-10 rounded border border-slate-700 px-3">Helpful</button><button onClick={() => feedback("down")} className="h-10 rounded border border-slate-700 px-3">Review</button><button onClick={() => speak(message.answer)} className="h-10 rounded border border-slate-700 px-3">Speak</button></div>}
       </div>
     </div>
   );
@@ -690,6 +724,33 @@ function AdminView({ documents, analytics, refresh, notify }) {
     }
   }
 
+  async function reprocessDocument(documentId) {
+    setBusy(true);
+    try {
+      await api(`/api/documents/${documentId}/process`, { method: "POST" });
+      await refresh();
+      notify("Document reprocessed", "Chunks, vectors, summary, and FAQs were refreshed.", "success");
+    } catch (error) {
+      notify("Reprocess failed", error.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteDocument(documentId, title) {
+    if (!window.confirm(`Delete "${title}" from the knowledge base?`)) return;
+    setBusy(true);
+    try {
+      await api(`/api/documents/${documentId}`, { method: "DELETE" });
+      await refresh();
+      notify("Document deleted", title, "success");
+    } catch (error) {
+      notify("Delete failed", error.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
       <form onSubmit={upload} className="space-y-3 rounded border border-slate-800 bg-slate-900 p-4">
@@ -704,7 +765,7 @@ function AdminView({ documents, analytics, refresh, notify }) {
       </form>
       <div className="space-y-4">
         <MetricGrid documents={documents} analytics={analytics} />
-        <div className="grid gap-3">{documents.length ? documents.map((doc) => <DocumentCard key={doc.id} doc={doc} rich />) : <EmptyPanel title="No documents yet" body="Upload the first college document to create searchable chunks and source-backed answers." />}</div>
+        <div className="grid gap-3">{documents.length ? documents.map((doc) => <DocumentCard key={doc.id} doc={doc} rich onReprocess={reprocessDocument} onDelete={deleteDocument} disabled={busy} />) : <EmptyPanel title="No documents yet" body="Upload the first college document to create searchable chunks and source-backed answers." />}</div>
       </div>
     </div>
   );
@@ -838,7 +899,7 @@ function EmptyPanel({ title, body }) {
   );
 }
 
-function DocumentCard({ doc, rich }) {
+function DocumentCard({ doc, rich, onReprocess, onDelete, disabled }) {
   return (
     <article className="rounded border border-slate-800 bg-slate-950 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -848,6 +909,12 @@ function DocumentCard({ doc, rich }) {
       <div className="mt-2 text-sm text-slate-400">{doc.collection || "General Knowledge Base"} | v{doc.version || 1} | {doc.department || "All"} | {doc.chunkCount || 0} chunks</div>
       {rich && doc.summary && <p className="mt-2 text-sm text-slate-300">{doc.summary}</p>}
       {rich && doc.faqs?.length ? <div className="mt-2 text-xs text-cyan-200">{doc.faqs.map((faq) => faq.question).join(" | ")}</div> : null}
+      {rich && (onReprocess || onDelete) ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {onReprocess && <button disabled={disabled} onClick={() => onReprocess(doc.id)} className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Reprocess</button>}
+          {onDelete && <button disabled={disabled} onClick={() => onDelete(doc.id, doc.title)} className="rounded border border-rose-500/40 px-3 py-2 text-sm text-rose-200 disabled:opacity-50">Delete</button>}
+        </div>
+      ) : null}
     </article>
   );
 }
