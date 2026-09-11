@@ -12,6 +12,26 @@ body {
   background: #020617;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  touch-action: manipulation;
+}
+
 html[data-theme="light"] body {
   background: #f8fafc;
 }
@@ -148,6 +168,22 @@ html[data-theme="light"] body {
   border: 1px solid #1e293b;
   border-radius: 8px;
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .react-flow__minimap {
+    display: none;
+  }
+
+  .react-flow__controls {
+    transform: scale(.92);
+    transform-origin: bottom left;
+  }
+
+  .react-flow__handle {
+    width: 7px;
+    height: 7px;
+  }
 }
 
 .react-flow__background {

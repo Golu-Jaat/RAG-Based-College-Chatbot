@@ -209,17 +209,17 @@ function AuthScreen({ setUser, refresh, notify, theme, setTheme }) {
   }
 
   return (
-    <div className={`theme-${theme} grid min-h-screen place-items-center bg-slate-950 p-6`}>
-      <div className="fixed right-5 top-5">
+    <div className={`theme-${theme} grid min-h-screen place-items-center bg-slate-950 p-4 pt-20 sm:p-6`}>
+      <div className="fixed right-4 top-4 z-20 sm:right-5 sm:top-5">
         <ThemeToggle theme={theme} setTheme={setTheme} />
       </div>
-      <div className="grid w-full max-w-5xl overflow-hidden rounded border border-slate-800 bg-slate-900 shadow-2xl md:grid-cols-[1fr_390px]">
-        <section className="auth-hero bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,.18),transparent_35%),linear-gradient(135deg,#0f172a,#020617)] p-8">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded border border-slate-800 bg-slate-900 shadow-2xl md:grid-cols-[minmax(0,1fr)_390px]">
+        <section className="auth-hero bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,.18),transparent_35%),linear-gradient(135deg,#0f172a,#020617)] p-5 sm:p-8">
           <div className="text-sm uppercase tracking-widest text-cyan-300">College RAG Operator Console</div>
-          <h1 className="mt-5 max-w-2xl text-4xl font-bold text-white md:text-6xl">Monitor every retrieval step before the answer ships.</h1>
+          <h1 className="mt-5 max-w-2xl text-3xl font-bold text-white sm:text-4xl lg:text-5xl">Monitor every retrieval step before the answer ships.</h1>
           <p className="mt-5 max-w-xl text-slate-300">Upload college documents, inspect the RAG graph, watch execution events, and answer students with citations from MongoDB-backed retrieval.</p>
         </section>
-        <form onSubmit={submit} className="space-y-4 border-l border-slate-800 bg-slate-950/70 p-7">
+        <form onSubmit={submit} className="space-y-4 border-t border-slate-800 bg-slate-950/70 p-5 sm:p-7 md:border-l md:border-t-0">
           <div className="grid grid-cols-2 rounded border border-slate-800 p-1">
             <button type="button" className={`rounded px-3 py-2 ${mode === "login" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => switchMode("login")}>Login</button>
             <button type="button" className={`rounded px-3 py-2 ${mode === "register" ? "bg-cyan-500 text-slate-950" : "text-slate-300"}`} onClick={() => switchMode("register")}>Register</button>
@@ -246,7 +246,7 @@ function AppShell({ user, view, setView, setUser, children, drawerOpen, setDrawe
   const meta = viewMeta[view] || viewMeta.console;
   return (
     <div className="grid min-h-screen lg:grid-cols-[288px_1fr]">
-      <aside className="border-r border-slate-800 bg-slate-950/90 p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+      <aside className="border-b border-slate-800 bg-slate-950/90 p-3 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto lg:border-b-0 lg:border-r lg:p-4">
         <div className="rounded border border-cyan-400/30 bg-cyan-400/10 p-4">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded bg-cyan-400 font-bold text-slate-950">R</div>
@@ -255,38 +255,45 @@ function AppShell({ user, view, setView, setUser, children, drawerOpen, setDrawe
               <div className="text-xs text-cyan-200">Operator Console</div>
             </div>
           </div>
-          <div className="mt-4 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 text-xs text-slate-400">MongoDB retrieval pipeline active</div>
+          <div className="mt-4 hidden rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 text-xs text-slate-400 sm:block">MongoDB retrieval pipeline active</div>
         </div>
-        <nav className="mt-6 grid gap-2">
+        <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:mt-6 lg:grid lg:overflow-visible lg:pb-0">
           {nav.map((item) => (
-            <button key={item} onClick={() => setView(item)} className={`rounded border px-4 py-3 text-left transition ${view === item ? "border-cyan-400/50 bg-slate-800 text-cyan-200" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-900"}`}>
+            <button key={item} onClick={() => setView(item)} className={`min-w-[116px] rounded border px-3 py-2.5 text-left transition lg:min-w-0 lg:px-4 lg:py-3 ${view === item ? "border-cyan-400/50 bg-slate-800 text-cyan-200" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-900"}`}>
               <span className="block font-medium capitalize">{viewMeta[item].label}</span>
-              <span className="mt-1 block text-xs normal-case text-slate-500">{viewMeta[item].description}</span>
+              <span className="mt-1 hidden text-xs normal-case text-slate-500 lg:block">{viewMeta[item].description}</span>
             </button>
           ))}
         </nav>
-        <div className="mt-8 rounded border border-slate-800 p-4">
+        <div className="mt-3 flex items-center justify-between gap-3 rounded border border-slate-800 p-3 lg:hidden">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-white">{user.name}</div>
+            <div className="truncate text-xs text-slate-400">{user.role}</div>
+          </div>
+          <button onClick={() => { localStorage.removeItem(tokenKey); setUser(null); }} className="shrink-0 rounded border border-slate-700 px-3 py-2 text-xs text-slate-300">Sign out</button>
+        </div>
+        <div className="mt-8 hidden rounded border border-slate-800 p-4 lg:block">
           <div className="font-semibold text-white">{user.name}</div>
           <div className="break-all text-sm text-slate-400">{user.email}</div>
           <div className="mt-2 inline-flex rounded bg-emerald-500/15 px-2 py-1 text-xs text-emerald-200">{user.role}</div>
         </div>
-        <button onClick={() => { localStorage.removeItem(tokenKey); setUser(null); }} className="mt-4 h-11 w-full rounded border border-slate-700 text-slate-300">Sign out</button>
+        <button onClick={() => { localStorage.removeItem(tokenKey); setUser(null); }} className="mt-4 hidden h-11 w-full rounded border border-slate-700 text-slate-300 lg:block">Sign out</button>
       </aside>
       <main className="min-w-0">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/80 px-5 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/80 px-3 py-4 sm:px-5">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest text-cyan-300">Live System</div>
-            <h2 className="text-2xl font-semibold text-white">{meta.label}</h2>
+            <h2 className="text-xl font-semibold text-white sm:text-2xl">{meta.label}</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">{meta.description}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
             <ThemeToggle theme={theme} setTheme={setTheme} />
-            <button onClick={() => setDrawerOpen(true)} className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-200">
+            <button onClick={() => setDrawerOpen(true)} className="flex-1 rounded border border-slate-700 px-4 py-2 text-sm text-slate-200 sm:flex-none">
               Notifications <span className="ml-2 rounded bg-cyan-400 px-2 text-slate-950">{notifications.length}</span>
             </button>
           </div>
         </header>
-        <div className="mx-auto max-w-[1680px] p-4">{children}</div>
+        <div className="mx-auto max-w-[1680px] p-3 sm:p-4">{children}</div>
       </main>
       <NotificationsDrawer open={drawerOpen} setOpen={setDrawerOpen} notifications={notifications} />
     </div>
@@ -362,7 +369,7 @@ function ConsoleView({ documents, analytics, notify }) {
 function SystemStatusBar({ documents, analytics }) {
   const chunks = analytics?.totals?.chunks || documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0);
   return (
-    <section className="grid gap-3 rounded border border-slate-800 bg-slate-900 p-4 md:grid-cols-3">
+    <section className="grid gap-3 rounded border border-slate-800 bg-slate-900 p-3 sm:p-4 md:grid-cols-3">
       <div>
         <div className="text-xs uppercase tracking-widest text-cyan-300">System Health</div>
         <div className="mt-1 text-lg font-semibold text-white">Ready for student questions</div>
@@ -387,7 +394,7 @@ function MetricGrid({ documents, analytics }) {
     ["Unanswered", analytics?.totals?.unanswered || 0, "Needs more documents"]
   ];
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map(([label, value, helper]) => (
         <div key={label} className="rounded border border-slate-800 bg-slate-900 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -409,7 +416,7 @@ function NodePalette() {
         <h3 className="font-semibold text-white">Node Palette</h3>
         <span className="rounded bg-cyan-400/10 px-2 py-1 text-[11px] uppercase tracking-wide text-cyan-200">Drag</span>
       </div>
-      <div className="mt-3 grid gap-2">
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
         {palette.map((item) => (
           <div key={item.type} draggable onDragStart={(event) => event.dataTransfer.setData("application/reactflow", JSON.stringify(item))} className="cursor-grab rounded border border-slate-700 bg-slate-950 p-2.5 active:cursor-grabbing hover:border-cyan-300">
             <div className="text-sm font-semibold text-cyan-200">{item.label}</div>
@@ -436,8 +443,8 @@ function WorkflowCanvas({ setSelectedNode, notify }) {
   }, [screenToFlowPosition, setNodes, notify]);
 
   return (
-    <section className="relative h-[560px] overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-slate-950/20">
-      <div className="pointer-events-none absolute left-4 top-4 z-10 rounded border border-slate-800 bg-slate-900/95 px-3 py-2 text-xs text-slate-400">
+    <section className="relative h-[420px] overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-slate-950/20 sm:h-[500px] lg:h-[560px]">
+      <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 rounded border border-slate-800 bg-slate-900/95 px-3 py-2 text-xs text-slate-400 sm:left-4 sm:right-auto sm:top-4">
         Drag nodes from palette, connect steps, click any node to configure.
       </div>
       <ReactFlow
@@ -467,7 +474,7 @@ function WorkflowCanvas({ setSelectedNode, notify }) {
 
 function RagNode({ data, selected }) {
   return (
-    <div className={`min-w-48 rounded border px-4 py-3 shadow-lg ${selected ? "border-cyan-300 bg-slate-800" : "border-slate-700 bg-slate-900/95"}`}>
+    <div className={`w-44 rounded border px-3 py-2.5 shadow-lg sm:w-48 sm:px-4 sm:py-3 ${selected ? "border-cyan-300 bg-slate-800" : "border-slate-700 bg-slate-900/95"}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs uppercase tracking-wide text-cyan-300">{data.type}</span>
         <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-200">{data.status}</span>
@@ -509,7 +516,7 @@ function ExecutionTimeline({ events }) {
       <h3 className="font-semibold text-white">Live Execution Timeline</h3>
       <div className="mt-4 grid gap-3">
         {events.map((event) => (
-          <div key={event.id} className="flex items-start gap-3 rounded border border-slate-800 bg-slate-950 p-3">
+          <div key={event.id} className="grid gap-2 rounded border border-slate-800 bg-slate-950 p-3 sm:flex sm:items-start sm:gap-3">
             <span className={`rounded px-2 py-1 text-xs font-semibold ring-1 ${agentColors[event.agent]}`}>{event.agent}</span>
             <div className="min-w-0 flex-1 text-sm text-slate-300">{event.text}</div>
             <time className="text-xs text-slate-500">{event.time}</time>
@@ -567,7 +574,7 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
       <section className="overflow-hidden rounded border border-slate-800 bg-slate-900">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 p-3">
           <div>
@@ -582,10 +589,10 @@ function ChatView({ documents, messages, setMessages, activeSession, setActiveSe
           <Select label="Category" value={filters.category} values={options.categories} onChange={(value) => setFilters((item) => ({ ...item, category: value }))} />
           <Select label="Language" value={filters.language} values={["en", "hi", "auto"]} onChange={(value) => setFilters((item) => ({ ...item, language: value }))} />
         </div>
-        <div className="max-h-[560px] min-h-[460px] space-y-4 overflow-auto bg-slate-950/40 p-4">
+        <div className="max-h-[560px] min-h-[360px] space-y-4 overflow-auto bg-slate-950/40 p-3 sm:min-h-[460px] sm:p-4">
           {messages.length ? messages.map((message, index) => <Message key={message.id || index} message={message} notify={notify} setMessages={setMessages} />) : <EmptyChatState documents={documents} setDraftQuestion={setDraftQuestion} />}
         </div>
-        <form onSubmit={submit} className="grid gap-3 border-t border-slate-800 p-3 sm:grid-cols-[1fr_96px]">
+        <form onSubmit={submit} className="grid gap-3 border-t border-slate-800 p-3 sm:grid-cols-[minmax(0,1fr)_96px]">
           <textarea
             name="question"
             value={draftQuestion}
@@ -649,8 +656,8 @@ function EmptyChatState({ documents, setDraftQuestion }) {
   ];
 
   return (
-    <div className="grid min-h-[430px] place-items-center">
-      <div className="w-full max-w-2xl rounded border border-slate-800 bg-slate-950 p-6 text-center">
+    <div className="grid min-h-[330px] place-items-center sm:min-h-[430px]">
+      <div className="w-full max-w-2xl rounded border border-slate-800 bg-slate-950 p-4 text-center sm:p-6">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded bg-cyan-400 text-xl font-bold text-slate-950">AI</div>
         <h3 className="mt-4 text-lg font-semibold text-white">Chat is ready</h3>
         <p className="mt-2 text-sm text-slate-400">
@@ -679,7 +686,7 @@ function Message({ message, notify, setMessages }) {
 
   return (
     <div className="space-y-3">
-      <div className="ml-auto max-w-3xl rounded bg-cyan-500 px-4 py-3 font-medium text-slate-950 shadow-lg shadow-cyan-950/10">{message.question}</div>
+      <div className="ml-auto max-w-full rounded bg-cyan-500 px-4 py-3 font-medium text-slate-950 shadow-lg shadow-cyan-950/10 sm:max-w-3xl">{message.question}</div>
       <div className="max-w-4xl rounded border border-slate-800 bg-slate-950 p-4 shadow-sm">
         <p className="whitespace-pre-wrap text-slate-200">{message.answer}</p>
         {message.pending && !message.answer && <div className="mt-1 text-sm text-slate-500">Searching indexed sources...</div>}
@@ -752,7 +759,7 @@ function AdminView({ documents, analytics, refresh, notify }) {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
       <form onSubmit={upload} className="space-y-3 rounded border border-slate-800 bg-slate-900 p-4">
         <h3 className="font-semibold text-white">Upload Document</h3>
         <p className="text-sm text-slate-400">Add official college notices, PDFs, FAQs, and policies to expand answer coverage.</p>
@@ -760,7 +767,7 @@ function AdminView({ documents, analytics, refresh, notify }) {
         <Input name="collection" label="Collection" />
         <Input name="category" label="Category" />
         <Input name="department" label="Department" />
-        <input name="file" type="file" required className="w-full rounded border border-slate-700 bg-slate-950 p-3" />
+        <input name="file" type="file" required className="w-full min-w-0 rounded border border-slate-700 bg-slate-950 p-3 text-sm" />
         <button disabled={busy} className="h-11 w-full rounded bg-cyan-400 font-semibold text-slate-950 disabled:animate-pulse">{busy ? "Processing..." : "Upload and process"}</button>
       </form>
       <div className="space-y-4">
@@ -786,12 +793,12 @@ function HistoryView({ sessions, setView, setMessages, setActiveSession, notify 
   return (
     <div className="grid gap-3">
       {sessions.length ? sessions.map((session) => (
-        <div key={session.id} className="flex items-center justify-between rounded border border-slate-800 bg-slate-900 p-4">
-          <div>
-            <strong>{session.title}</strong>
+        <div key={session.id} className="grid gap-3 rounded border border-slate-800 bg-slate-900 p-4 sm:flex sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <strong className="block truncate">{session.title}</strong>
             <div className="text-sm text-slate-500">{new Date(session.updatedAt).toLocaleString()}</div>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <button onClick={() => openSession(session.id)} className="rounded border border-slate-700 px-3 py-2">Open</button>
             <button onClick={() => exportSession(session.id)} className="rounded border border-slate-700 px-3 py-2">Export</button>
           </div>
@@ -818,10 +825,10 @@ function ProfileView({ user, documents, sessions, analytics, theme, setTheme, se
   const collections = unique(documents.map((doc) => doc.collection || "General Knowledge Base"));
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
       <section className="rounded border border-slate-800 bg-slate-900 p-5">
-        <div className="flex items-center gap-4">
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded bg-cyan-400 text-2xl font-bold text-slate-950">{initials}</div>
+        <div className="grid gap-4 sm:flex sm:items-center">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded bg-cyan-400 text-xl font-bold text-slate-950 sm:h-20 sm:w-20 sm:text-2xl">{initials}</div>
           <div className="min-w-0">
             <h3 className="truncate text-xl font-semibold text-white">{user.name}</h3>
             <p className="break-all text-sm text-slate-400">{user.email}</p>
@@ -841,7 +848,7 @@ function ProfileView({ user, documents, sessions, analytics, theme, setTheme, se
       </section>
 
       <section className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {profileStats.map(([label, value]) => (
             <div key={label} className="rounded border border-slate-800 bg-slate-900 p-4">
               <div className="text-sm text-slate-400">{label}</div>
@@ -902,13 +909,13 @@ function EmptyPanel({ title, body }) {
 function DocumentCard({ doc, rich, onReprocess, onDelete, disabled }) {
   return (
     <article className="rounded border border-slate-800 bg-slate-950 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <strong className="text-white">{doc.title}</strong>
+      <div className="grid gap-2 sm:flex sm:items-start sm:justify-between sm:gap-3">
+        <strong className="min-w-0 break-words text-white">{doc.title}</strong>
         <span className="rounded bg-emerald-500/15 px-2 py-1 text-xs text-emerald-200">{doc.processingStatus}</span>
       </div>
-      <div className="mt-2 text-sm text-slate-400">{doc.collection || "General Knowledge Base"} | v{doc.version || 1} | {doc.department || "All"} | {doc.chunkCount || 0} chunks</div>
+      <div className="mt-2 break-words text-sm text-slate-400">{doc.collection || "General Knowledge Base"} | v{doc.version || 1} | {doc.department || "All"} | {doc.chunkCount || 0} chunks</div>
       {rich && doc.summary && <p className="mt-2 text-sm text-slate-300">{doc.summary}</p>}
-      {rich && doc.faqs?.length ? <div className="mt-2 text-xs text-cyan-200">{doc.faqs.map((faq) => faq.question).join(" | ")}</div> : null}
+      {rich && doc.faqs?.length ? <div className="mt-2 break-words text-xs text-cyan-200">{doc.faqs.map((faq) => faq.question).join(" | ")}</div> : null}
       {rich && (onReprocess || onDelete) ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {onReprocess && <button disabled={disabled} onClick={() => onReprocess(doc.id)} className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Reprocess</button>}
